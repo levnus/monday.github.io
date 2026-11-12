@@ -1,0 +1,959 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post Office — My Mail</title>
+
+<style>
+:root {
+  --paper: #f4e8d2;
+  --ink: #49372d;
+  --red: #a52b2b;
+  --background: #e7d9c2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Verdana, Arial, sans-serif;
+  color: var(--ink);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(#ffffff45 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+header {
+  background: #654a3b;
+  color: #fff1d9;
+  padding: 18px 25px;
+  border-bottom: 5px solid #b99a70;
+}
+
+header h1 {
+  font-family: Georgia, serif;
+  margin: 0;
+  font-size: 29px;
+  letter-spacing: 2px;
+}
+
+header p {
+  font-size: 11px;
+  margin-bottom: 0;
+  color: #e9d5b7;
+}
+
+nav {
+  background: #d3b995;
+  padding: 10px;
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid #a98b65;
+}
+
+nav button, .btn {
+  background: linear-gradient(#fff4df, #d6bd96);
+  border: 1px solid #9a7954;
+  color: #503b2b;
+  padding: 9px 15px;
+  box-shadow: 1px 2px 2px #0002;
+}
+
+nav button:hover, .btn:hover {
+  background: #fff8eb;
+}
+
+main {
+  max-width: 1050px;
+  margin: 25px auto;
+  padding: 0 15px;
+}
+
+.panel {
+  background: #fff8eb;
+  border: 1px solid #b99a70;
+  box-shadow: 3px 4px 0 #8b7257;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-family: Georgia, serif;
+  font-size: 23px;
+  margin-top: 0;
+}
+
+.small {
+  font-size: 11px;
+  color: #826e59;
+}
+
+.letter-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 15px;
+}
+
+.letter-card {
+  background: #f4e6ce;
+  border: 1px solid #c5a982;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .2s;
+}
+
+.letter-card:hover {
+  transform: translateY(-4px);
+}
+
+.mini-envelope {
+  height: 105px;
+  position: relative;
+  background: #f9edda;
+  border: 1px solid #bca17c;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.mini-envelope:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  margin: auto;
+  border-left: 80px solid transparent;
+  border-right: 80px solid transparent;
+  border-top: 65px solid #e5d2b2;
+}
+
+.mini-seal {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 40px;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #a52b2b;
+  color: #ffe3b6;
+  box-shadow: 0 2px 4px #0004;
+  font-size: 15px;
+}
+
+.status {
+  display: inline-block;
+  background: #e3d3b9;
+  padding: 4px 8px;
+  font-size: 10px;
+  border: 1px solid #b99a70;
+  margin-top: 5px;
+}
+
+/* ENVELOPE VIEW */
+
+.envelope-section {
+  display: none;
+}
+
+.envelope-section.active {
+  display: block;
+}
+
+.envelope-controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 18px 0;
+}
+
+.envelope-stage {
+  perspective: 1200px;
+  width: min(100%, 570px);
+  margin: 25px auto;
+}
+
+.envelope {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.55;
+  transform-style: preserve-3d;
+  transition: transform .75s;
+}
+
+.envelope.flipped {
+  transform: rotateY(180deg);
+}
+
+.envelope-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  background: var(--paper);
+  border: 2px solid #b79c77;
+  box-shadow: 0 12px 25px #60472c35;
+  overflow: hidden;
+}
+
+.envelope-front {
+  background:
+    linear-gradient(145deg, #fff8e9, #e9d8bb);
+}
+
+.envelope-back {
+  transform: rotateY(180deg);
+  background:
+    linear-gradient(135deg, #f9efd9, #e8d5b6);
+}
+
+.envelope-back:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(35deg, transparent 49.7%, #c7ad89 50%, transparent 50.4%),
+    linear-gradient(-35deg, transparent 49.7%, #c7ad89 50%, transparent 50.4%);
+  opacity: .6;
+  pointer-events: none;
+}
+
+.flap {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: #e6d3b1;
+  clip-path: polygon(0 0, 100% 0, 50% 57%);
+  transform-origin: top center;
+  transition: transform .8s;
+  filter: drop-shadow(0 3px 2px #72563855);
+}
+
+.flap:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #f8ebd2, #cbb38e);
+  clip-path: polygon(0 0, 100% 0, 50% 57%);
+}
+
+.envelope.opened .flap {
+  transform: rotateX(180deg);
+  z-index: 0;
+}
+
+.seal {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  width: 67px;
+  height: 67px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d34b40, #8c151a 70%);
+  border: 4px solid #8d2520;
+  box-shadow: 0 4px 6px #49251c66, inset 0 0 5px #ff9a75;
+  color: #ffe0bb;
+  display: grid;
+  place-items: center;
+  font-family: Georgia, serif;
+  font-size: 25px;
+  cursor: pointer;
+  transition: opacity .3s, transform .3s;
+}
+
+.envelope.opened .seal {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.seal:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.front-hint {
+  position: absolute;
+  bottom: 13px;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  color: #9a8060;
+  letter-spacing: 2px;
+}
+
+.stamp {
+  position: absolute;
+  top: 12px;
+  right: 13px;
+  width: 76px;
+  height: 85px;
+  border: 3px dashed #9d7561;
+  background: #e6cdb3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #714b3e;
+  transform: rotate(3deg);
+  z-index: 2;
+}
+
+.stamp .stamp-symbol {
+  font-size: 26px;
+}
+
+.stamp small {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
+.back-details {
+  position: absolute;
+  z-index: 2;
+  top: 17px;
+  left: 18px;
+  width: 65%;
+  font-family: Georgia, serif;
+}
+
+.back-details h3 {
+  font-size: 12px;
+  font-weight: normal;
+  letter-spacing: 2px;
+  border-bottom: 1px solid #bba180;
+  padding-bottom: 5px;
+}
+
+.back-details p {
+  font-size: 13px;
+  margin: 10px 0;
+}
+
+.back-details strong {
+  font-size: 10px;
+  color: #8c7055;
+  display: block;
+  text-transform: uppercase;
+}
+
+.back-details .username {
+  font-family: Verdana, sans-serif;
+  font-size: 10px;
+  color: #927c60;
+}
+
+.back-status {
+  position: absolute;
+  z-index: 2;
+  bottom: 13px;
+  left: 15px;
+  font-size: 10px;
+  background: #e1d0b4;
+  border: 1px solid #b79a73;
+  padding: 6px 9px;
+}
+
+.letter-inside {
+  display: none;
+  width: min(90%, 440px);
+  min-height: 280px;
+  margin: -20px auto 20px;
+  position: relative;
+  z-index: 6;
+  background: #fff9e9;
+  border: 1px solid #c9ad84;
+  box-shadow: 0 7px 20px #0002;
+  padding: 25px;
+  animation: letterRise .8s ease;
+}
+
+.letter-inside.visible {
+  display: block;
+}
+
+@keyframes letterRise {
+  from { transform: translateY(35px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.letter-inside h2 {
+  border-bottom: 1px solid #d4bea0;
+  padding-bottom: 12px;
+}
+
+.letter-body {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-family: Georgia, serif;
+  font-size: 15px;
+}
+
+.letter-date {
+  font-size: 10px;
+  color: #9c8668;
+  margin-top: 20px;
+}
+
+/* COMPOSE */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 13px;
+}
+
+.field label {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.field input, .field textarea, .field select {
+  padding: 10px;
+  background: #fffdf6;
+  border: 1px solid #bba17c;
+  color: #49372d;
+  width: 100%;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+.seal-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.seal-choice {
+  border: 2px solid transparent;
+  background: #eadbc2;
+  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  font-size: 23px;
+}
+
+.seal-choice.selected {
+  border-color: #50392a;
+  outline: 2px solid #d3b995;
+}
+
+footer {
+  text-align: center;
+  font-size: 10px;
+  padding: 25px;
+  color: #806d55;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media(max-width: 550px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .back-details {
+    width: 67%;
+    left: 10px;
+    top: 5px;
+  }
+
+  .back-details p {
+    font-size: 10px;
+    margin: 6px 0;
+  }
+
+  .back-details h3 {
+    margin: 5px 0;
+    font-size: 10px;
+  }
+
+  .stamp {
+    width: 58px;
+    height: 67px;
+    right: 8px;
+    top: 8px;
+  }
+
+  .stamp .stamp-symbol {
+    font-size: 20px;
+  }
+
+  .seal {
+    width: 55px;
+    height: 55px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>✉ THE POST OFFICE</h1>
+  <p>A little place for letters, stamps and correspondence.</p>
+</header>
+
+<nav>
+  <button onclick="showPage('inbox')">✉ My Mailbox</button>
+  <button onclick="showPage('compose')">＋ Write a Letter</button>
+  <button onclick="showPage('sent')">↗ Sent Mail</button>
+</nav>
+
+<main>
+
+<!-- INBOX -->
+
+<section id="inbox" class="page">
+  <div class="panel">
+    <h2>My Mailbox</h2>
+    <p class="small">Your letters are waiting for you.</p>
+    <div id="inbox-list" class="letter-list"></div>
+    <p id="empty-inbox" class="small">Your mailbox is empty. No letters yet!</p>
+  </div>
+</section>
+
+<!-- SENT -->
+
+<section id="sent" class="page hidden">
+  <div class="panel">
+    <h2>Sent Letters</h2>
+    <p class="small">Letters you've written.</p>
+    <div id="sent-list" class="letter-list"></div>
+    <p id="empty-sent" class="small">You haven't sent any letters yet.</p>
+  </div>
+</section>
+
+<!-- COMPOSE -->
+
+<section id="compose" class="page hidden">
+  <div class="panel">
+    <h2>Write a Letter</h2>
+    <p class="small">Put your thoughts on paper.</p>
+
+    <form id="compose-form">
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Your name</label>
+          <input id="sender-name" required placeholder="Your name">
+        </div>
+
+        <div class="field">
+          <label>Your username</label>
+          <input id="sender-user" required placeholder="@username">
+        </div>
+
+        <div class="field">
+          <label>Recipient's name</label>
+          <input id="recipient-name" required placeholder="Their name">
+        </div>
+
+        <div class="field">
+          <label>Recipient's username</label>
+          <input id="recipient-user" required placeholder="@username">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Subject</label>
+        <input id="subject" required placeholder="A letter for you...">
+      </div>
+
+      <div class="field">
+        <label>Your letter</label>
+        <textarea id="message" required maxlength="5000"
+          placeholder="Dear friend,..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Recipient's wax seal</label>
+        <p class="small">Choose the seal that the recipient has selected for their envelope.</p>
+
+        <div class="seal-picker" id="seal-picker">
+          <button type="button" class="seal-choice selected" data-seal="♥">♥</button>
+          <button type="button" class="seal-choice" data-seal="✿">✿</button>
+          <button type="button" class="seal-choice" data-seal="★">★</button>
+          <button type="button" class="seal-choice" data-seal="♛">♛</button>
+          <button type="button" class="seal-choice" data-seal="❀">❀</button>
+          <button type="button" class="seal-choice" data-seal="✧">✧</button>
+        </div>
+      </div>
+
+      <button class="btn" type="submit">✉ Send Letter</button>
+    </form>
+  </div>
+</section>
+
+<!-- ENVELOPE VIEW -->
+
+<section id="envelope-view" class="envelope-section">
+  <div class="panel">
+    <h2 id="envelope-title">A Letter</h2>
+    <p class="small">Click the envelope to flip it over.</p>
+
+    <div class="envelope-stage">
+      <div class="envelope" id="envelope">
+
+        <!-- FRONT -->
+
+        <div class="envelope-face envelope-front">
+          <div class="flap"></div>
+
+          <div class="stamp">
+            <div class="stamp-symbol">✉</div>
+            <small>POST</small>
+            <small>2005</small>
+          </div>
+
+          <button class="seal" id="wax-seal"
+            title="Open envelope">♥</button>
+
+          <div class="front-hint">
+            OPEN THE SEAL TO READ YOUR LETTER
+          </div>
+        </div>
+
+        <!-- BACK -->
+
+        <div class="envelope-face envelope-back">
+          <div class="back-details">
+            <h3>CORRESPONDENCE</h3>
+
+            <p>
+              <strong>FROM</strong>
+              <span id="back-sender"></span>
+              <span class="username" id="back-sender-user"></span>
+            </p>
+
+            <p>
+              <strong>TO</strong>
+              <span id="back-recipient"></span>
+              <span class="username" id="back-recipient-user"></span>
+            </p>
+          </div>
+
+          <div class="stamp">
+            <div class="stamp-symbol">✉</div>
+            <small>POST</small>
+            <small>2005</small>
+          </div>
+
+          <div class="back-status" id="back-status">
+            STATUS: DELIVERED
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="envelope-controls">
+      <button class="btn" onclick="flipEnvelope()">↻ Flip Envelope</button>
+      <button class="btn" id="open-btn" onclick="openEnvelope()">Open Letter</button>
+      <button class="btn" onclick="closeLetter()">Close Letter</button>
+      <button class="btn" onclick="showPage('inbox')">← Mailbox</button>
+    </div>
+
+    <div class="letter-inside" id="letter-inside">
+      <p class="small" id="letter-from"></p>
+      <h2 id="letter-subject"></h2>
+      <div class="letter-body" id="letter-body"></div>
+      <div class="letter-date" id="letter-date"></div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+<footer>
+  THE POST OFFICE © 2005 · Written with care.
+</footer>
+
+<script>
+
+// ===================================
+// STORAGE
+// ===================================
+
+let letters = JSON.parse(localStorage.getItem("postOfficeLetters") || "[]");
+
+let currentLetter = null;
+let selectedSeal = "♥";
+
+function saveLetters() {
+  localStorage.setItem("postOfficeLetters", JSON.stringify(letters));
+}
+
+// ===================================
+// NAVIGATION
+// ===================================
+
+function showPage(page) {
+  document.querySelectorAll(".page").forEach(el => {
+    el.classList.add("hidden");
+  });
+
+  document.getElementById("envelope-view").classList.remove("active");
+
+  if (page === "envelope") {
+    document.getElementById("envelope-view").classList.add("active");
+  } else {
+    document.getElementById(page).classList.remove("hidden");
+  }
+
+  if (page === "inbox" || page === "sent") {
+    renderLetters();
+  }
+}
+
+// ===================================
+// SEAL PICKER
+// ===================================
+
+document.querySelectorAll(".seal-choice").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".seal-choice").forEach(b => {
+      b.classList.remove("selected");
+    });
+
+    button.classList.add("selected");
+    selectedSeal = button.dataset.seal;
+  });
+});
+
+// ===================================
+// COMPOSE AND SEND
+// ===================================
+
+document.getElementById("compose-form").addEventListener("submit", event => {
+  event.preventDefault();
+
+  const letter = {
+    id: Date.now(),
+    sender: document.getElementById("sender-name").value.trim(),
+    senderUser: document.getElementById("sender-user").value.trim(),
+    recipient: document.getElementById("recipient-name").value.trim(),
+    recipientUser: document.getElementById("recipient-user").value.trim(),
+    subject: document.getElementById("subject").value.trim(),
+    message: document.getElementById("message").value.trim(),
+    seal: selectedSeal,
+    status: "Delivered",
+    date: new Date().toLocaleString()
+  };
+
+  letters.push(letter);
+  saveLetters();
+
+  document.getElementById("compose-form").reset();
+
+  alert("Your letter has been sent!");
+
+  showPage("sent");
+});
+
+// ===================================
+// RENDER MAILBOX
+// ===================================
+
+function renderLetters() {
+  const inbox = document.getElementById("inbox-list");
+  const sent = document.getElementById("sent-list");
+
+  inbox.innerHTML = "";
+  sent.innerHTML = "";
+
+  const incoming = letters.filter(letter => true);
+  const outgoing = letters;
+
+  document.getElementById("empty-inbox").style.display =
+    incoming.length ? "none" : "block";
+
+  document.getElementById("empty-sent").style.display =
+    outgoing.length ? "none" : "block";
+
+  incoming.slice().reverse().forEach(letter => {
+    inbox.appendChild(createLetterCard(letter));
+  });
+
+  outgoing.slice().reverse().forEach(letter => {
+    sent.appendChild(createLetterCard(letter));
+  });
+}
+
+function createLetterCard(letter) {
+  const card = document.createElement("div");
+  card.className = "letter-card";
+
+  const envelope = document.createElement("div");
+  envelope.className = "mini-envelope";
+
+  const seal = document.createElement("div");
+  seal.className = "mini-seal";
+  seal.textContent = letter.seal;
+
+  envelope.appendChild(seal);
+
+  const name = document.createElement("strong");
+  name.textContent = letter.sender;
+
+  const subject = document.createElement("p");
+  subject.className = "small";
+  subject.textContent = letter.subject;
+
+  const status = document.createElement("span");
+  status.className = "status";
+  status.textContent = letter.status.toUpperCase();
+
+  card.append(envelope, name, subject, status);
+
+  card.addEventListener("click", () => {
+    displayLetter(letter.id);
+  });
+
+  return card;
+}
+
+// ===================================
+// DISPLAY ENVELOPE
+// ===================================
+
+function displayLetter(id) {
+  currentLetter = letters.find(letter => letter.id === id);
+
+  if (!currentLetter) return;
+
+  document.getElementById("envelope-title").textContent =
+    currentLetter.subject;
+
+  document.getElementById("wax-seal").textContent =
+    currentLetter.seal;
+
+  document.getElementById("back-sender").textContent =
+    currentLetter.sender;
+
+  document.getElementById("back-sender-user").textContent =
+    currentLetter.senderUser;
+
+  document.getElementById("back-recipient").textContent =
+    currentLetter.recipient;
+
+  document.getElementById("back-recipient-user").textContent =
+    currentLetter.recipientUser;
+
+  document.getElementById("back-status").textContent =
+    "STATUS: " + currentLetter.status.toUpperCase();
+
+  document.getElementById("letter-from").textContent =
+    "FROM: " + currentLetter.senderUser;
+
+  document.getElementById("letter-subject").textContent =
+    currentLetter.subject;
+
+  document.getElementById("letter-body").textContent =
+    currentLetter.message;
+
+  document.getElementById("letter-date").textContent =
+    currentLetter.date;
+
+  document.getElementById("envelope").classList.remove("flipped");
+  document.getElementById("envelope").classList.remove("opened");
+
+  document.getElementById("letter-inside").classList.remove("visible");
+
+  document.getElementById("open-btn").disabled = false;
+
+  showPage("envelope");
+}
+
+// ===================================
+// FLIP ENVELOPE
+// ===================================
+
+function flipEnvelope() {
+  document.getElementById("envelope").classList.toggle("flipped");
+}
+
+// ===================================
+// OPEN ENVELOPE
+// ===================================
+
+function openEnvelope() {
+  if (!currentLetter) return;
+
+  document.getElementById("envelope").classList.remove("flipped");
+  document.getElementById("envelope").classList.add("opened");
+
+  setTimeout(() => {
+    document.getElementById("letter-inside").classList.add("visible");
+  }, 350);
+
+  currentLetter.status = "Opened";
+  saveLetters();
+
+  document.getElementById("back-status").textContent =
+    "STATUS: OPENED";
+
+  document.getElementById("open-btn").disabled = true;
+  renderLetters();
+}
+
+// Clicking the wax seal also opens the letter.
+
+document.getElementById("wax-seal").addEventListener("click", openEnvelope);
+
+// ===================================
+// CLOSE LETTER
+// ===================================
+
+function closeLetter() {
+  document.getElementById("letter-inside").classList.remove("visible");
+
+  document.getElementById("envelope").classList.remove("opened");
+  document.getElementById("envelope").classList.remove("flipped");
+
+  document.getElementById("open-btn").disabled = false;
+}
+
+// ===================================
+// INITIALIZE
+// ===================================
+
+renderLetters();
+
+</script>
+</body>
+</html>
